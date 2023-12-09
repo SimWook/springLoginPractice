@@ -11,6 +11,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -67,7 +68,7 @@ public class LoginController {
         return "redirect:/";
     }
 
-    @PostMapping("/login")
+    //@PostMapping("/login")
     public String loginV3(@Valid @ModelAttribute LoginForm form, BindingResult bindingResult, HttpServletRequest request) {
         if (bindingResult.hasErrors()) {
             return "login/loginForm";
@@ -79,13 +80,36 @@ public class LoginController {
             return "login/loginForm";
         }
         // ログイン成功処理
-
         // セッションがある場合、レスポンスに返却。ない場合は, 新規生成
         HttpSession session = request.getSession();
         // セッションに会員情報を保存
         session.setAttribute(SessionConst.LOGIN_MEMBER, loginMember);
 
         return "redirect:/";
+    }
+
+    /**
+     * ログイン以降 redirect 処理
+     */
+    @PostMapping("/login")
+    public String loginV4(@Valid @ModelAttribute LoginForm form, BindingResult bindingResult,
+                          @RequestParam(defaultValue = "/") String redirectURL, HttpServletRequest request) {
+        if (bindingResult.hasErrors()) {
+            return "login/loginForm";
+        }
+        Member loginMember = loginService.login(form.getLoginId(), form.getPassword());
+        log.info("login? {}", loginMember);
+        if (loginMember == null) {
+            bindingResult.reject("loginFail", "ID及びパスワードが合ってません。");
+            return "login/loginForm";
+        }
+        // ログイン成功処理
+        // セッションがある場合、レスポンスに返却。ない場合は, 新規生成
+        HttpSession session = request.getSession();
+        // セッションに会員情報を保存
+        session.setAttribute(SessionConst.LOGIN_MEMBER, loginMember);
+
+        return "redirect:" + redirectURL;
     }
 
     //@PostMapping("/logout")
@@ -109,6 +133,7 @@ public class LoginController {
         }
         return "redirect:/";
     }
+
     private void expireCookie(HttpServletResponse response, String cookieName) {
         Cookie cookie = new Cookie(cookieName, null);
         cookie.setMaxAge(0);
