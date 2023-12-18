@@ -22,17 +22,19 @@ public class LoginCheckFilter implements Filter {
 
         try {
             log.info("認証チェックフィルタースタート{}", requestURI);
+
             if (isLoginCheckPath(requestURI)) {
                 log.info("認証チェックロジック実行 {}", requestURI);
                 HttpSession session = httpRequest.getSession(false);
                 if (session == null || session.getAttribute(SessionConst.LOGIN_MEMBER) == null) {
+
                     log.info("未認証使用者リクエスト {}", requestURI);
                     // ログインでredirect
                     httpResponse.sendRedirect("/login?redirectURL=" + requestURI);
                     return; // ここが重要、未認証使用者は次に実行しなくて終わり
                 }
-                chain.doFilter(request, response);
             }
+            chain.doFilter(request, response);
         } catch (Exception e) {
             throw e; //例外ロギングも可能ですが、tomcatまで例外を出す必要がある
         } finally {
